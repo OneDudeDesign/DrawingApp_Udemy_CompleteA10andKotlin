@@ -1,10 +1,13 @@
 package com.example.drawingapp
 
 import android.Manifest
+import android.app.Activity
 import android.app.Dialog
+import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
@@ -35,9 +38,41 @@ class MainActivity : AppCompatActivity() {
         ib_gallery.setOnClickListener {
             if (isReadStorageAllowed()) {
                 //run code to get the image from the gallery
+                //create the intent
+                val pickPhotoIntent = Intent(Intent.ACTION_PICK,
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                //start the intent with the constant you defined
+                startActivityForResult(pickPhotoIntent, GALLERY)
+
             } else {
                 //we need to get permissions if we do not have them
                 requestStoragePermission()
+            }
+        }
+
+        ib_undo.setOnClickListener {
+            drawing_view.onClickUndo()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        //check if the result was ok
+        if (resultCode == Activity.RESULT_OK) {
+            //check that it was the gallery request
+            if (requestCode == GALLERY) {
+                //try and set the background or catch the exception
+                try {
+                    if (data!!.data != null) {
+                        iv_background.visibility = View.VISIBLE
+                        iv_background.setImageURI(data.data)
+                    } else {
+                        Toast.makeText(this, "Error in parsing the image or it is corrupted.", Toast.LENGTH_LONG).show()
+                    }
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -119,12 +154,13 @@ class MainActivity : AppCompatActivity() {
     //helper function to determine if we still have permission to read storage
     private fun isReadStorageAllowed(): Boolean {
         val result = ContextCompat.checkSelfPermission(this,
-        Manifest.permission.READ_EXTERNAL_STORAGE)
+                Manifest.permission.READ_EXTERNAL_STORAGE)
 
         return result == PackageManager.PERMISSION_GRANTED
     }
 
     companion object {
         private const val STORAGE_PERMISSION_CODE = 1
+        private const val GALLERY = 2
     }
 }
