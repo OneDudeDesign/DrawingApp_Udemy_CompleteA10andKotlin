@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         ib_save.setOnClickListener {
-            if (isReadStorageAllowed()){
+            if (isReadStorageAllowed()) {
                 BitmapAsyncTask(getBitmapFromView(fl_drawing_view_container)).execute()
             } else {
                 requestStoragePermission()
@@ -174,12 +174,12 @@ class MainActivity : AppCompatActivity() {
         return result == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun getBitmapFromView (view: View) : Bitmap {
-        val returnedBitmap = Bitmap.createBitmap(view.width, view.height,Bitmap.Config.ARGB_8888)
+    private fun getBitmapFromView(view: View): Bitmap {
+        val returnedBitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(returnedBitmap)
-        val bgDrawable  = view.background
+        val bgDrawable = view.background
 
-        if (bgDrawable != null){
+        if (bgDrawable != null) {
             bgDrawable.draw(canvas)
         } else {
             canvas.drawColor(Color.WHITE)
@@ -190,15 +190,24 @@ class MainActivity : AppCompatActivity() {
         return returnedBitmap
     }
 
-    private inner class BitmapAsyncTask(val mBitmap: Bitmap) : AsyncTask<Any, Void, String>(){
+    private inner class BitmapAsyncTask(val mBitmap: Bitmap) : AsyncTask<Any, Void, String>() {
+
+        private lateinit var mProgressDialog : Dialog
+
+        override fun onPreExecute() {
+            super.onPreExecute()
+            showProgressDialogue()
+
+        }
+
         override fun doInBackground(vararg params: Any?): String {
             var result = ""
             if (mBitmap != null) {
                 try {
                     val bytes = ByteArrayOutputStream()
                     mBitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
-                    val f  = File(externalCacheDir!!.absoluteFile.toString() +
-                    File.separator + "KidDrawingApp_" + System.currentTimeMillis()/1000 + ".png")
+                    val f = File(externalCacheDir!!.absoluteFile.toString() +
+                            File.separator + "KidDrawingApp_" + System.currentTimeMillis() / 1000 + ".png")
 
                     val fos = FileOutputStream(f)
                     fos.write(bytes.toByteArray())
@@ -215,11 +224,22 @@ class MainActivity : AppCompatActivity() {
 
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
+            cancelProgressDialogue()
             if (!result!!.isEmpty()) {
-                Toast.makeText(this@MainActivity,"File saved successfuly :$result",Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "File saved successfuly :$result", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this@MainActivity, "Something went wrong while saving the file.", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        private fun showProgressDialogue () {
+            mProgressDialog = Dialog(this@MainActivity)
+            mProgressDialog.setContentView(R.layout.dialog_custom_progress)
+            mProgressDialog.show()
+        }
+
+        private fun cancelProgressDialogue() {
+            mProgressDialog.dismiss()
         }
 
     }
